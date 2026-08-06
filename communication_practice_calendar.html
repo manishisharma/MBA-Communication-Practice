@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Communication Practice Calendar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0E1024;
+    --bg-soft: #14172E;
+    --card: #1B1E3B;
+    --card-line: #2A2E52;
+    --text: #F2EFEA;
+    --text-dim: #9A9CBF;
+    --gold: #FFB238;
+    --gold-soft: rgba(255,178,56,.14);
+    --teal: #35D6C4;
+    --teal-soft: rgba(53,214,196,.14);
+    --pink: #FF5D8F;
+    --pink-soft: rgba(255,93,143,.14);
+    --violet: #8B6BFF;
+    --violet-soft: rgba(139,107,255,.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(ellipse at top left, #171A38 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+
+  /* ---- HEADER ---- */
+  header{margin-bottom:28px;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 4px var(--pink-soft);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    margin:8px 0 6px;
+    letter-spacing:-0.01em;
+  }
+  h1 span{
+    background:linear-gradient(90deg,var(--gold),var(--pink) 50%,var(--violet));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{color:var(--text-dim);font-size:15px;max-width:620px;line-height:1.5;}
+
+  /* ---- SOUNDWAVE DIVIDER ---- */
+  .wave{display:flex;align-items:flex-end;gap:3px;height:22px;margin:20px 0 24px;}
+  .wave i{
+    width:3px;border-radius:2px;
+    background:linear-gradient(180deg,var(--gold),var(--teal),var(--pink),var(--violet));
+    opacity:.55;
+  }
+
+  /* ---- LEGEND ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:26px;}
+  .chip{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 14px;border-radius:999px;
+    background:var(--card);border:1px solid var(--card-line);
+    font-size:13px;font-weight:500;cursor:pointer;
+    transition:transform .15s, border-color .15s, opacity .2s;
+    user-select:none;
+  }
+  .chip:hover{transform:translateY(-1px);}
+  .chip .sw{width:9px;height:9px;border-radius:50%;}
+  .chip.dimmed{opacity:.35;}
+  .chip[data-phase="1"] .sw{background:var(--gold);}
+  .chip[data-phase="2"] .sw{background:var(--teal);}
+  .chip[data-phase="3"] .sw{background:var(--pink);}
+  .chip[data-phase="4"] .sw{background:var(--violet);}
+  .chip.active[data-phase="1"]{border-color:var(--gold);}
+  .chip.active[data-phase="2"]{border-color:var(--teal);}
+  .chip.active[data-phase="3"]{border-color:var(--pink);}
+  .chip.active[data-phase="4"]{border-color:var(--violet);}
+
+  /* ---- TABS ---- */
+  .tabs{display:flex;gap:6px;margin-bottom:18px;background:var(--bg-soft);padding:5px;border-radius:14px;width:max-content;}
+  .tab{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;font-size:14px;
+    padding:9px 20px;border-radius:10px;
+    color:var(--text-dim);cursor:pointer;
+    transition:background .18s, color .18s;
+  }
+  .tab.active{background:var(--card);color:var(--text);}
+
+  /* ---- CALENDAR ---- */
+  .cal-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+  .cal-head h2{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:0;}
+  .cal-head .tag{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);
+    border:1px dashed var(--card-line);padding:4px 10px;border-radius:8px;
+  }
+  .grid-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px;}
+  .grid-dow div{font-size:11px;text-align:center;color:var(--text-dim);letter-spacing:.08em;font-family:'JetBrains Mono',monospace;}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .cell{
+    min-height:96px;border-radius:12px;
+    background:var(--card);border:1px solid var(--card-line);
+    padding:8px;position:relative;display:flex;flex-direction:column;gap:6px;
+    transition:transform .15s, box-shadow .15s, opacity .2s;
+  }
+  .cell.empty{background:transparent;border:none;}
+  .cell.blank{border-style:dashed;opacity:.55;}
+  .cell.has-topic{cursor:pointer;}
+  .cell.has-topic:hover{transform:translateY(-2px);box-shadow:0 8px 22px -8px rgba(0,0,0,.5);}
+  .cell .num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);}
+  .cell .bar{height:3px;width:26px;border-radius:3px;}
+  .cell[data-phase="1"] .bar{background:var(--gold);}
+  .cell[data-phase="2"] .bar{background:var(--teal);}
+  .cell[data-phase="3"] .bar{background:var(--pink);}
+  .cell[data-phase="4"] .bar{background:var(--violet);}
+  .cell .topic{
+    font-size:11.5px;line-height:1.35;color:var(--text);
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .cell.dimmed{opacity:.25;}
+  .cell .ghost{font-size:11px;color:var(--text-dim);font-style:italic;}
+
+  /* ---- MODAL ---- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(6,7,16,.72);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--bg-soft);border:1px solid var(--card-line);border-radius:18px;
+    max-width:440px;width:100%;padding:26px;position:relative;
+  }
+  .modal .close{
+    position:absolute;top:14px;right:16px;cursor:pointer;color:var(--text-dim);
+    font-size:20px;line-height:1;background:none;border:none;
+  }
+  .modal .phase-badge{
+    display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;margin-bottom:14px;
+  }
+  .modal .date{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin:0 0 4px;}
+  .modal .topics{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+  .modal .topics li{
+    font-size:15px;line-height:1.5;padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--card-line);
+  }
+
+  /* ---- FOOTNOTE ---- */
+  .note{
+    margin-top:36px;padding:16px 18px;border-radius:14px;border:1px dashed var(--card-line);
+    color:var(--text-dim);font-size:13px;line-height:1.6;
+  }
+  .note b{color:var(--text);}
+
+  @media (max-width:640px){
+    .cell{min-height:74px;}
+    .cell .topic{font-size:10.5px;-webkit-line-clamp:2;}
+    .grid-dow div{font-size:9px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow"><span class="dot"></span> On Air &middot; Aug &ndash; Nov 2026</div>
+    <h1>Your <span>Communication Practice</span> Calendar</h1>
+    <p class="sub">Four cycles, one topic a day. Tap any coloured day to read the full prompt. Click a legend pill to spotlight just that phase.</p>
+  </header>
+
+  <div class="wave" id="wave"></div>
+
+  <div class="legend" id="legend">
+    <div class="chip active" data-phase="1"><span class="sw"></span>Topic Speech</div>
+    <div class="chip active" data-phase="2"><span class="sw"></span>Group Discussion</div>
+    <div class="chip active" data-phase="3"><span class="sw"></span>Impromptu (JAM)</div>
+    <div class="chip active" data-phase="4"><span class="sw"></span>Impromptu GD</div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-month="0">August</div>
+    <div class="tab" data-month="1">September</div>
+    <div class="tab" data-month="2">October</div>
+    <div class="tab" data-month="3">November</div>
+  </div>
+
+  <div class="cal-head">
+    <h2 id="calTitle">August 2026</h2>
+    <div class="tag" id="calTag">Cycle 1</div>
+  </div>
+
+  <div class="grid-dow">
+    <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+  </div>
+  <div class="grid" id="grid"></div>
+
+  <div class="note">
+    <b>About October &amp; November:</b> no topics were given for these two months, so they're left as open dashed slots ready for your next topic list. Everything from August and September is fully scheduled &mdash; just tell me the Oct/Nov topics and I'll drop them straight in.
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="close" id="closeModal">&times;</button>
+    <div class="phase-badge" id="modalBadge"></div>
+    <p class="date" id="modalDate"></p>
+    <ul class="topics" id="modalTopics"></ul>
+  </div>
+</div>
+
+<script>
+const PHASES = {
+  1:{name:"Topic Speech", color:"var(--gold)", bgVar:"var(--gold-soft)"},
+  2:{name:"Group Discussion", color:"var(--teal)", bgVar:"var(--teal-soft)"},
+  3:{name:"Impromptu (JAM)", color:"var(--pink)", bgVar:"var(--pink-soft)"},
+  4:{name:"Impromptu GD", color:"var(--violet)", bgVar:"var(--violet-soft)"}
+};
+
+function d(day, phase, topics){ return {day, phase, topics: Array.isArray(topics)?topics:[topics]}; }
+
+const DATA = {
+  "2026-08":[
+    d(1,1,"Is customer always right?"),
+    d(2,1,"Profit vs Purpose"),
+    d(3,1,"Startups vs Corporate Jobs"),
+    d(4,1,"Remote work: Future or temporary trend?"),
+    d(5,1,"Why do startups fail?"),
+    d(6,1,"Importance of branding in business"),
+    d(7,1,"Should companies prioritize employees over shareholders?"),
+    d(8,1,"Is AI a threat to jobs?"),
+    d(9,1,"Role of innovation in business success"),
+    d(10,1,"Ethics in business"),
+    d(11,1,["Impact of AI on the global economy","India's journey towards a $10 trillion economy"]),
+    d(12,1,["Make in India: Success or work in progress?","Globalization vs Protectionism"]),
+    d(13,1,["India's demographic dividend","Role of MSMEs in economic growth"]),
+    d(14,1,["Digital India and economic transformation","Cryptocurrency: Opportunity or Risk?"]),
+    d(15,1,["Inflation and its impact on consumers","India's rise as a global manufacturing hub"]),
+    d(16,2,"India's Diplomacy in a Multipolar World"),
+    d(17,2,"AI: The Biggest Opportunity Since the Internet"),
+    d(18,2,"Work-Life Balance: Myth or Reality?"),
+    d(19,2,"Chanakya vs Modern Management Gurus"),
+    d(20,2,"Why Great Companies Fail"),
+    d(21,2,"Data Privacy vs Business Growth"),
+    d(22,2,"Leadership During Crisis"),
+    d(23,2,"Should Profit Be the Only Goal of Business?"),
+    d(24,2,"The Future of Human Skills in the AI Era"),
+    d(25,2,"What Makes India a Global Power?"),
+    d(26,2,"Mock GD - Revision Round 1: re-run any 2 topics from this cycle"),
+    d(27,2,"Mock GD - Revision Round 2: re-run any 2 topics from this cycle"),
+    d(28,2,"Mock GD - Revision Round 3: re-run any 2 topics from this cycle"),
+    d(29,2,"Mock GD - Revision Round 4: re-run any 2 topics from this cycle"),
+    d(30,2,"Mock GD - Revision Round 5: re-run any 2 topics from this cycle"),
+    d(31,2,"Buffer day - rest, or a free weekly review")
+  ],
+  "2026-09":[
+    d(1,3,"Should companies prioritize profit or society?"),
+    d(2,3,"Is corporate social responsibility genuine or just marketing?"),
+    d(3,3,"Should businesses be environmentally responsible?"),
+    d(4,3,"Is it ethical to use customer data for advertising?"),
+    d(5,3,"Can a company be successful without strong values?"),
+    d(6,3,"Should companies speak on social issues?"),
+    d(7,3,"Is greenwashing harmful?"),
+    d(8,3,"Should unethical companies be boycotted?"),
+    d(9,3,"Can business and ethics go together?"),
+    d(10,3,"What responsibility do managers have toward society?"),
+    d(11,3,"Revision / Mock Impromptu Round 1"),
+    d(12,3,"Revision / Mock Impromptu Round 2"),
+    d(13,3,"Revision / Mock Impromptu Round 3"),
+    d(14,3,"Revision / Mock Impromptu Round 4"),
+    d(15,3,"Revision / Mock Impromptu Round 5"),
+    d(16,4,"Make in India: success or challenge?"),
+    d(17,4,"Startup India and the future of entrepreneurship"),
+    d(18,4,"Digital India and business growth"),
+    d(19,4,"India's role in the global economy"),
+    d(20,4,"Can India become a manufacturing hub?"),
+    d(21,4,"The impact of UPI on businesses"),
+    d(22,4,"Women in leadership in India"),
+    d(23,4,"The future of Indian startups"),
+    d(24,4,"India's demographic dividend"),
+    d(25,4,"Can India lead the AI revolution?"),
+    d(26,4,"Mock Impromptu GD - Revision Round 1"),
+    d(27,4,"Mock Impromptu GD - Revision Round 2"),
+    d(28,4,"Mock Impromptu GD - Revision Round 3"),
+    d(29,4,"Mock Impromptu GD - Revision Round 4"),
+    d(30,4,"Mock Impromptu GD - Revision Round 5")
+  ],
+  "2026-10":[],
+  "2026-11":[]
+};
+
+const MONTHS = [
+  {label:"August 2026", key:"2026-08", year:2026, monthIdx:7, tag:"Cycle 1 · Topic Speech + GD"},
+  {label:"September 2026", key:"2026-09", year:2026, monthIdx:8, tag:"Cycle 1 · Impromptu + Impromptu GD"},
+  {label:"October 2026", key:"2026-10", year:2026, monthIdx:9, tag:"Cycle 2 · awaiting topics"},
+  {label:"November 2026", key:"2026-11", year:2026, monthIdx:10, tag:"Cycle 2 · awaiting topics"}
+];
+
+let activeMonth = 0;
+let activePhases = new Set([1,2,3,4]);
+
+function buildWave(){
+  const wave = document.getElementById('wave');
+  for(let i=0;i<48;i++){
+    const bar = document.createElement('i');
+    const h = 4 + Math.round(Math.sin(i/3)*6 + Math.random()*8) + 6;
+    bar.style.height = Math.max(4,h)+'px';
+    wave.appendChild(bar);
+  }
+}
+
+function dataForDay(monthKey, dayNum){
+  return (DATA[monthKey]||[]).find(x=>x.day===dayNum);
+}
+
+function renderMonth(idx){
+  activeMonth = idx;
+  const m = MONTHS[idx];
+  document.getElementById('calTitle').textContent = m.label;
+  document.getElementById('calTag').textContent = m.tag;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', i===idx));
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  const firstDow = new Date(m.year, m.monthIdx, 1).getDay();
+  const daysInMonth = new Date(m.year, m.monthIdx+1, 0).getDate();
+
+  for(let i=0;i<firstDow;i++){
+    const blank = document.createElement('div');
+    blank.className = 'cell empty';
+    grid.appendChild(blank);
+  }
+
+  for(let day=1; day<=daysInMonth; day++){
+    const entry = dataForDay(m.key, day);
+    const cell = document.createElement('div');
+    const num = document.createElement('div');
+    num.className = 'num';
+    num.textContent = String(day).padStart(2,'0');
+    cell.appendChild(num);
+
+    if(entry){
+      cell.className = 'cell has-topic';
+      cell.setAttribute('data-phase', entry.phase);
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      cell.appendChild(bar);
+      const topic = document.createElement('div');
+      topic.className = 'topic';
+      topic.textContent = entry.topics[0] + (entry.topics.length>1 ? ' + 1 more' : '');
+      cell.appendChild(topic);
+      if(!activePhases.has(entry.phase)) cell.classList.add('dimmed');
+      cell.addEventListener('click', ()=>openModal(m, day, entry));
+    } else {
+      cell.className = 'cell blank';
+      const ghost = document.createElement('div');
+      ghost.className = 'ghost';
+      ghost.textContent = '+ add topic';
+      cell.appendChild(ghost);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function openModal(m, day, entry){
+  const phase = PHASES[entry.phase];
+  document.getElementById('modalBadge').textContent = phase.name;
+  document.getElementById('modalBadge').style.color = phase.color;
+  document.getElementById('modalBadge').style.background = phase.bgVar;
+  document.getElementById('modalBadge').style.border = '1px solid ' + phase.color;
+  document.getElementById('modalDate').textContent = m.label.replace(' 2026','') + ' ' + day + ', 2026';
+  const list = document.getElementById('modalTopics');
+  list.innerHTML = '';
+  entry.topics.forEach(t=>{
+    const li = document.createElement('li');
+    li.textContent = t;
+    list.appendChild(li);
+  });
+  document.getElementById('overlay').classList.add('show');
+}
+
+document.getElementById('closeModal').addEventListener('click', ()=>{
+  document.getElementById('overlay').classList.remove('show');
+});
+document.getElementById('overlay').addEventListener('click', (e)=>{
+  if(e.target.id==='overlay') document.getElementById('overlay').classList.remove('show');
+});
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=> renderMonth(parseInt(tab.getAttribute('data-month'))));
+});
+
+document.querySelectorAll('.chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    const phase = parseInt(chip.getAttribute('data-phase'));
+    if(activePhases.has(phase)){
+      activePhases.delete(phase);
+      chip.classList.remove('active');
+      chip.classList.add('dimmed');
+    } else {
+      activePhases.add(phase);
+      chip.classList.add('active');
+      chip.classList.remove('dimmed');
+    }
+    renderMonth(activeMonth);
+  });
+});
+
+buildWave();
+renderMonth(0);
+</script>
+</body>
+</html>
